@@ -1,0 +1,10 @@
+{
+  "name": "nodebb-plugin-rern-bbcode",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.6.1",
+    "ya-bbcode": "^1.0.4"
+  }
+}
