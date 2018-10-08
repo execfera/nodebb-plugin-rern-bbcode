@@ -59,7 +59,7 @@ const BBCode = {
 		async.waterfall([
 			function (next) {
 				aboutme = (aboutme && parser) ? parser.render(aboutme) : aboutme;
-				process.nextTick(next, null, aboutme);
+				// process.nextTick(next, null, aboutme);
 			},
 			async.apply(BBCode.postParse),
 		], callback);
@@ -69,7 +69,7 @@ const BBCode = {
 		async.waterfall([
 			function (next) {
 				raw = (raw && parser) ? parser.render(raw) : raw;
-				process.nextTick(next, null, raw);
+				// process.nextTick(next, null, raw);
 			},
 			async.apply(BBCode.postParse),
 		], callback);
