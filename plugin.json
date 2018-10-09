@@ -17,7 +17,7 @@
   "hooks": [
     { "hook": "static:app.load", "method": "load" },
     { "hook": "filter:parse.post", "method": "processPost", "priority": 5 },
-    { "hook": "filter:parse.signature", "method": "processSig", "priority": 20 },
+    { "hook": "filter:parse.signature", "method": "processSig", "priority": 5 },
     { "hook": "filter:parse.aboutme", "method": "processRaw" },
     { "hook": "filter:parse.raw", "method": "processRaw", "priority": 5 },
     { "hook": "filter:admin.header.build", "method": "extendAdminMenu" }

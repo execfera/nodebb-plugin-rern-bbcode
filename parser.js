@@ -359,7 +359,7 @@
 					}
 				}
 			}
-			this.tokens[this.tokens.length - 1].getString(this.bbcodes, { postData: this.postData }, callback);
+			this.tokens[this.tokens.length - 1].getString(this.bbcodes, {}, callback);
 		}
 	}
 
@@ -570,7 +570,7 @@
       .reduce((str, tag) => str.replace(baseRegex(tag), singleCodesTable[tag]), string);
   }
 
-  function sanitizeHtml(content) {
+  /* function sanitizeHtml(content) {
     sanitizer(content, {
       allowedTags: sanitizer.defaults.allowedTags.concat([
         'span', 'font', 'img', 's',
@@ -584,7 +584,7 @@
         span: [ 'style', 'class', 'name' ],
       }
     })
-  }
+  } */
 
 	function checkCompatibility(callback) {
 		async.parallel({
@@ -621,10 +621,14 @@
   module.exports.processSig = function(data, callback) {
 		if (!data || !data.userData || !data.userData.signature) {
 			return callback(null, data);
-    }
-    winston.verbose(`processing bbcode on sig ${data.uid}`);
+		}
     
-    data.userData.signature = data.userData.signature.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+		data.userData.signature = data.userData.signature
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/\n/g, "<br>")
+			.replace(/&#x2F;/g, "/");
+		winston.verbose('processing bbcode on sig');
   
 		new BBCodeParser(data.userData.signature, bbCodesTable, 'apply', function(result) {
 			data.userData.signature = bbCodeParserSingle(result);
