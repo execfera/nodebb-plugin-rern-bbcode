@@ -1,0 +1,84 @@
+.chip {
+  position: relative;
+  vertical-align: baseline;
+
+  .chipclick {
+    position: relative;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .chipbody {
+    display: none;
+    font-size: 1rem;
+    line-height: 1.5;
+    min-width: 30em;
+    position: fixed;
+    /* top: 2em; */
+    bottom: 2em;
+    right: 2em;
+    border: 1px solid;
+    padding: 5px;
+    background-color: #eff0f1;
+    color: rgb(51, 51, 51);
+    word-wrap: break-word; 
+    z-index: 9999;
+    overflow: visible;
+  }
+}
+
+.bbcode-poppos {
+  position: relative;
+}
+
+[class*=" bbcode-popup"], [class^="bbcode-popup"] {
+  display: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  min-width: 30em;
+  position: absolute;
+  /* top: 2em; */
+  border: 1px solid;
+  padding: 5px;
+  background-color: #eff0f1;
+  color: rgb(51, 51, 51);
+  word-wrap: break-word; 
+  z-index: 9999;
+  overflow: visible;
+}
+
+
+[class*=" bbcode-hide"], [class^="bbcode-hide"], [class*=" bbcode-swap"], [class^="bbcode-swap"] {
+  display: none;
+}
+
+.vr-tag {
+  cursor: pointer;
+}
+
+.vr-tag-info {
+  display: none;
+}
+
+.spoiler-toggle {
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  border: 1px solid black;
+  border-radius: 2px;
+  background: rgba(33, 33, 33, .1);
+  padding: 2px;
+}
+
+.spoiler-body {
+  display: none;
+  border: 1px solid black;
+  border-top: 0;
+  padding: 6px;
+}
+
+.topic {
+  .post-signature {
+    font-style: normal;
+  }
+}

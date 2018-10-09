@@ -5,7 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "^2.6.1",
-    "winston": "^3.1.0",
-    "ya-bbcode": "^1.0.4"
+    "sanitize-html": "^1.19.1",
+    "winston": "^3.1.0"
   }
 }

@@ -1,10 +1,10 @@
 const plugin = require('./parser');
-const testStuff = {
+let testStuff = {
   postData: {
-    content: '[i][b][test=this argument here][/test][/b][/i]',
+    content: '[i][b]\n\n[terrain]Grass[/terrain][/b][/i][hr]',
   },
 };
 
-plugin.parse(testStuff, _ => {
+plugin.processPost(testStuff, _ => {
   console.log(testStuff.postData.content);
 });

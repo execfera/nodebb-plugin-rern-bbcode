@@ -1,10 +1,37 @@
 (function(module) {
 	"use strict";
 
+	const async = require('async'),
+    sanitizer = require('sanitize-html'),
+
+    chipData = require('./data/chip.json'),
+    virusData = require('./data/virus.json'),
+    terrainData = require('./data/terrain.json'),
+
+    winston = module.parent.require('winston'),
+    meta = module.parent.require('./meta'),
+    plugins = module.parent.require('./plugins'),
+
+    sanitize = true;
+
+  const reduceChip = Object.keys(chipData).reduce(function (keys, k) {
+    keys[k.toLowerCase()] = k; 
+      if (k[k.length - 1] === '1') keys[k.toLowerCase().slice(0, -1)] = k;
+    return keys;
+  }, {});
+
+  const virusDataMap = {};
+  
+  for (const family in virusData) {
+    virusData[family].virus
+      .forEach((data, idx) => {
+        if (data.name !== 'N/A') { virusDataMap[data.name] = [family, idx]; }
+      });
+  }
+
 	// Abstract BBCode Parser
-	const BBCodeParser = function(postData, codes, method, callback) {
-		this.postData = postData;
-		this.string = postData.content;
+	const BBCodeParser = function(content, codes, method, callback) {
+		this.string = content;
 
 		const STATE_NONE = 0;
 		const STATE_TOKEN_ADD = 1;
@@ -374,7 +401,7 @@
 		},
 		"size": {
 			apply: function(info, callback) {
-				callback('<font size="' + info.argument + '">' + info.value + '</font>');
+				callback('<font size="' + info.argument + '%" style="line-height: normal">' + info.value + '</font>');
 			}
 		},
 		"font": {
@@ -395,6 +422,11 @@
 		"right": {
 			apply: function(info, callback) {
 				callback('<p style="text-align:right">' + info.value + '</p>');
+			}
+		},
+		"class": {
+			apply: function(info, callback) {
+        callback(`<span class='bbcode-${info.argument}'>${info.value}</span>`);
 			}
 		},
 		"link": {
@@ -431,11 +463,6 @@
 					callback('<ul>' + info.value + '</ul>');
 			}
 		},
-		/* "video": {
-			apply: function(info, callback) {
-				callback('<div><iframe frameborder="0" id="ytplayer" type="text/html" width="640" height="390" src="http://www.youtube.com/embed/' + info.value + '"></iframe></div>');
-			}
-		}, */
 		"*": {
 			apply: function(info, callback) {
 				if (info.parent.token === "list") {
@@ -443,36 +470,121 @@
 				}
 			}
 		},
-		"test": {
-      singleTag: true,
-			apply: function(info, callback) {
-        callback(`<div class="test">${info.argument}</div>`);
-			}
-		},
 		"quote": {
 			apply: function(info, callback) {
-				callback((info.argument !== undefined ? "<p>@" + info.argument + " said: </p>" : "") + "<blockquote>" + info.value + "</blockquote>");
+      callback('<p>Quote' + (info.argument === undefined ? `(${info.argument})` : '') + `</p><blockquote>${info.value}</blockquote>`);
 			}
 		},
-		/* "spoiler": {
+		"terrain": {
 			apply: function(info, callback) {
-				var jadeFn = jade.compileFile('node_modules/nodebb-plugin-bbcodes/templates/jade/spoiler.tpl', {});
-				callback(jadeFn({ value: info.value, argument : (info.argument != undefined ? info.argument : "Spoiler") }));
+        callback(info.value in terrainData ? `<span class='chip'><span class='chipclick'>${info.value}</span><span class='chipbody'>${terrainData[info.value]}</span></span>` : info.value);
 			}
-		}, */
+		},
+		"virus": {
+			apply: function(info, callback) {
+        callback(virusTagReplace(info));
+			}
+		},
+		"spoiler": {
+			apply: function(info, callback) {
+        const spContent = info.argument === undefined ? 
+        'Spoiler' : info.argument;
+        callback(`<div class=spoiler-toggle>${spContent}</div><div class=spoiler-body>${info.value}</div>`)
+			}
+		},
   };
 
-  const baseRegex = (str) => new RegExp(`\\[${str}(?:=([^\\],]+))(?:,([^\\]]))?\\]`, 'g');
+  const singleCodesTable = {
+    "hr": () => '<hr>',
+    "chip": (match, ...args) => chipTagReplace(match, args[0], args[1]),
+  }
 
-	const winston = require('winston'),
-		// meta = module.parent.require('./meta'),
-		// plugins = module.parent.require('./plugins'),
-		// jade = require('jade'),
-		// db = module.parent.require('./database'),
-		async = require('async'),
-		
+  function chipTagReplace(match, input, param) {
+    if (!(input.toLowerCase() in reduceChip)) {
+      return match;
+    }
+    const name = reduceChip[input.toLowerCase()];
 
-		sanitize = true;
+    let elcolor;
+    switch (chipData[name].elem) {
+      case "Fire": elcolor = "<font color=#d22700>" + name + "</font>"; break;
+      case "Aqua": elcolor = "<font color=#6495ed>" + name + "</font>"; break;
+      case "Elec": elcolor = "<font color=orange>" + name + "</font>"; break;
+      case "Wood": elcolor = "<font color=#00c96b>" + name + "</font>"; break;
+      default: elcolor = name; break;
+    }
+  
+    switch (param) {
+      case "i":
+        return `<img src='https://execfera.github.io/rern/chip/${name}.png'>`;
+      case "s":
+        return `${chipData[name].summ} (Acc: ${chipData[name].acc})`;
+      case "f":
+        return `<img src='https://execfera.github.io/rern/chip/${name.replace('+','')}.png'> <span class='chip'><span class='chipclick'>${name}</span><span class='chipbody'>${chipData[name].desc}<br>Trader Rank: ${chipData[name].rank}</span></span>`;
+      case "a":
+        if (!("alias" in chipData[name])) return match;
+        else return `<img src='https://execfera.github.io/rern/chip/${name.replace('+','')}.png'> <span class='chip'><span class='chipclick'>${chipData[name].alias}</span><span class='chipbody'>${chipData[name].desc}<br>Trader Rank: ${chipData[name].rank}</span></span>`;
+      case "c":
+        return `<img src='https://execfera.github.io/rern/chip/${name.replace('+','')}.png'> <span class='chip'><span class='chipclick'>${elcolor}</span><span class='chipbody'>${chipData[name].desc}<br>Trader Rank: ${chipData[name].rank}</span></span>`; break;
+      default:
+        return `<img src='https://execfera.github.io/rern/chip/${name.replace('+','')}.png'> <span class='chip'><span class='chipclick'>${elcolor}</span><span class='chipbody'>${chipData[name].desc}</span></span>: ${chipData[name].summ} (Acc: ${chipData[name].acc})`;
+    }
+  }
+
+  function virusTagReplace(info) {
+    let returnVal = '', virusName = '';
+    if (info.argument !== undefined) {
+      returnVal += `<span class='vr-tag' name='${info.argument}'>${info.value}</span>`;
+      virusName = info.argument;
+    } else {
+      returnVal += `<span class='vr-tag' name='${info.value}'>${info.value}</span>`;
+      virusName = info.value;
+    }
+
+    if (virusName in virusDataMap) {
+      const [family, idx] = virusDataMap[virusName];
+      returnVal += `<span class='vr-tag-info'><b>${virusData[family].virus[idx].name}</b> (${family})<br><br>`;
+      if (virusData[family].family_note !== "") returnVal += `${virusData[family].family_note}<br><br>`;
+
+      returnVal += "Area:";
+      if (virusData[family].family_area.length === 0) { returnVal += " All<br><br>"; }
+      else if (idx === 6) { returnVal += " Undernet<br><br>"; }
+      else {
+        for (var i = 0; i < virusData[family].family_area.length; i++) {
+          if (i === virusData[family].family_area.length-1) returnVal += ` ${virusData[family].family_area[i]}<br><br>`;
+          else returnVal += ` ${virusData[family].family_area[i]},`;
+        }
+      }
+      returnVal += virusData[family].virus[idx].desc;
+      returnVal += '</span>';
+    }
+
+    return returnVal;
+  }
+
+  const baseRegex = (str) => new RegExp(`\\[${str}(?:=([^\\],]+))?(?:,([^\\]]))?\\]`, 'g');
+
+  function bbCodeParserSingle(content) {
+    let string = content;
+    return Object.keys(singleCodesTable)
+      .reduce((str, tag) => str.replace(baseRegex(tag), singleCodesTable[tag]), string);
+  }
+
+  function sanitizeHtml(content) {
+    sanitizer(content, {
+      allowedTags: sanitizer.defaults.allowedTags.concat([
+        'span', 'font', 'img', 's',
+      ]),
+      allowedAttributes: {
+        a: [ 'href', 'name', 'target' ],
+        img: [ 'src' ],
+        font: [ 'color' ],
+        div: [ 'class' ],
+        p: [ 'style' ],
+        span: [ 'style', 'class', 'name' ],
+      }
+    })
+  }
 
 	function checkCompatibility(callback) {
 		async.parallel({
@@ -492,49 +604,46 @@
 	/* ============================================ */
 	/* ============================================ */
 	/* ============================================ */
-
-	// plugins.fireHook('filter:post.save', postData, next);
-	module.exports.onPostSave = function(postData, next) {
-		// Parse dynamic tags and store ID's in the tag
-		new BBCodeParser(postData, bbCodesTable, 'save', function(result) {
-			postData.content = result;
-			next(null, postData);
-		}).parse();
-	};
-
-	// plugins.fireHook('filter:post.getFields', {posts: [data], fields: fields}, next)
-	module.exports.onPostGetFields = function(data, next) {
-		// Check if stored ID's changes and perform cleanup if needed
-		// Let's try to detect composer's request. 
-		// This is fcking hook but we will watch for fields=[content, tid, uid, handle]
-		// Assuming that this request is from composer
-		if (data.fields.indexOf("content") >= 0
-			&& data.fields.indexOf("tid") >= 0
-			&& data.fields.indexOf("tid") >= 0
-			&& data.fields.indexOf("handle") >= 0) {
-			new BBCodeParser(data.posts[0], bbCodesTable, 'get', function(result) {
-				data.posts[0].content = result;
-				next(null, data);
-			}).parse();
-		} else {
-			next(null, data);
-		}
-	};
-
-	module.exports.parse = function(data, callback) {
+  
+  module.exports.processPost = function(data, callback) {
 		if (!data || !data.postData || !data.postData.content) {
 			return callback(null, data);
 		}
-		if (sanitize) {
-			data.postData.content = data.postData.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br />");
-		}
-
-		new BBCodeParser(data.postData, bbCodesTable, 'apply', function(result) {
-			data.postData.content = result;
+    data.postData.content = data.postData.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    winston.verbose('processing bbcode on post');
+  
+		new BBCodeParser(data.postData.content, bbCodesTable, 'apply', function(result) {
+			data.postData.content = bbCodeParserSingle(result);
 			callback(null, data);
 		}).parse();
-		
-	};
+  }
+  
+  module.exports.processSig = function(data, callback) {
+		if (!data || !data.userData || !data.userData.signature) {
+			return callback(null, data);
+    }
+    winston.verbose(`processing bbcode on sig ${data.uid}`);
+    
+    data.userData.signature = data.userData.signature.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+  
+		new BBCodeParser(data.userData.signature, bbCodesTable, 'apply', function(result) {
+			data.userData.signature = bbCodeParserSingle(result);
+			callback(null, data);
+		}).parse();
+  }
+  
+  module.exports.processRaw = function(data, callback) {
+		if (!data) {
+			return callback(null, data);
+		}
+    
+    data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+  
+		new BBCodeParser(data, bbCodesTable, 'apply', function(result) {
+			data = bbCodeParserSingle(result);
+			callback(null, data);
+		}).parse();
+  }
 
 	function adminPanelController(req, res, next) {
 		checkCompatibility(function(err, checks) {
@@ -568,7 +677,7 @@
 		header.plugins.push({
 			"route": '/plugins/bbcodes',
 			"icon": 'fa-bold',
-			"name": 'BBCodes'
+			"name": 'RERN BBCodes'
 		});
 		next(null, header);
 	};
