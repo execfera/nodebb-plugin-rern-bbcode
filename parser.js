@@ -570,6 +570,14 @@
       .reduce((str, tag) => str.replace(baseRegex(tag), singleCodesTable[tag]), string);
   }
 
+  function textUnfucker(content) {
+    let string = content;
+    return string
+      .replace(/|/g, "\"")
+      .replace(//g, "'")
+      .replace(//g, "...");
+  }
+
   /* function sanitizeHtml(content) {
     sanitizer(content, {
       allowedTags: sanitizer.defaults.allowedTags.concat([
@@ -613,7 +621,7 @@
     winston.verbose('processing bbcode on post');
   
 		new BBCodeParser(data.postData.content, bbCodesTable, 'apply', function(result) {
-			data.postData.content = bbCodeParserSingle(result);
+			data.postData.content = textUnfucker(bbCodeParserSingle(result));
 			callback(null, data);
 		}).parse();
   }
