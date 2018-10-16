@@ -389,6 +389,11 @@
 				callback('<table>' + info.value + '</table>');
 			}
 		},
+		"th": {
+			apply: function(info, callback) {
+				callback('<th>' + info.value + '</th>');
+			}
+		},
 		"tr": {
 			apply: function(info, callback) {
 				callback('<tr>' + info.value + '</tr>');
@@ -459,13 +464,18 @@
 			apply: function(info, callback) {
 				if (info.argument === "1") {
 					callback('<ol>' + info.value + '</ol>');
-				} else
-					callback('<ul>' + info.value + '</ul>');
+				}
+        callback('<ul>' + info.value + '</ul>');
 			}
 		},
-		"*": {
+		"ul": {
 			apply: function(info, callback) {
-				if (info.parent.token === "list") {
+        callback('<ul>' + info.value + '</ul>');
+			}
+		},
+		"li": {
+			apply: function(info, callback) {
+				if (info.parent.token === "list" || info.parent.token === "ul") {
 					callback('<li>' + info.value + '</li>');
 				}
 			}
