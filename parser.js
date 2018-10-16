@@ -464,8 +464,9 @@
 			apply: function(info, callback) {
 				if (info.argument === "1") {
 					callback('<ol>' + info.value + '</ol>');
-				}
-        callback('<ul>' + info.value + '</ul>');
+				} else {
+          callback('<ul>' + info.value + '</ul>');
+        }
 			}
 		},
 		"ul": {
@@ -582,8 +583,9 @@
     let string = content;
     return string
       .replace(/|/g, "\"")
-      .replace(//g, "'")
-      .replace(//g, "...");
+      .replace(/|/g, "'")
+      .replace(//g, "...")
+      .replace(//g, "—");
   }
 
   /* function sanitizeHtml(content) {
