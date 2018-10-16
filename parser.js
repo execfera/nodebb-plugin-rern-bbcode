@@ -475,9 +475,7 @@
 		},
 		"li": {
 			apply: function(info, callback) {
-				if (info.parent.token === "list" || info.parent.token === "ul") {
-					callback('<li>' + info.value + '</li>');
-				}
+        callback('<li>' + info.value + '</li>');
 			}
 		},
 		"quote": {
