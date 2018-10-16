@@ -481,7 +481,7 @@
 		},
 		"quote": {
 			apply: function(info, callback) {
-      callback('<p>Quote' + (info.argument === undefined ? `(${info.argument})` : '') + `</p><blockquote>${info.value}</blockquote>`);
+      callback('<p>Quote' + (info.argument !== undefined ? ` (${info.argument})` : '') + `</p><blockquote>${info.value}</blockquote>`);
 			}
 		},
 		"terrain": {
