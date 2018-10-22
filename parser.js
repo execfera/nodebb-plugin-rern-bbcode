@@ -595,8 +595,8 @@
 			.replace(/</g, "&lt;")
 			.replace(/>/g, "&gt;")
 			.replace(/\n/g, "<br>")
-			.replace(/&#x5C;\[/g, '&#x5B;')
-			.replace(/&#x5C;\]/g, '&#x5D;')
+			.replace(/&#x5C;&lsqb;/g, '&lsqb;')
+			.replace(/&#x5C;\]/g, '&rsqb;')
 			.replace(/&#x2F;/g, "/");
 	}
 
