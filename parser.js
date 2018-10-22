@@ -573,11 +573,32 @@
 
   const baseRegex = (str) => new RegExp(`\\[${str}(?:=([^\\],]+))?(?:,([^\\]]))?\\]`, 'g');
 
-  function bbCodeParserSingle(content) {
+  function bbCodePostProcessor(content) {
     let string = content;
     return Object.keys(singleCodesTable)
       .reduce((str, tag) => str.replace(baseRegex(tag), singleCodesTable[tag]), string);
-  }
+	}
+	
+	function postbbCodePreProcessor(content) {
+		let string = content;
+		return string
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/\n/g, "<br>")
+			.replace(/\\\[/g, '&#x5B;')
+			.replace(/\\\]/g, '&#x5D;');
+	}
+	
+	function sigbbCodePreProcessor(content) {
+		let string = content;
+		return string
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/\n/g, "<br>")
+			.replace(/\\\[/g, '&#x5B;')
+			.replace(/\\\]/g, '&#x5D;')
+			.replace(/&#x2F;/g, "/");
+	}
 
   function textUnfucker(content) {
     let string = content;
@@ -627,11 +648,11 @@
 		if (!data || !data.postData || !data.postData.content) {
 			return callback(null, data);
 		}
-    data.postData.content = data.postData.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    data.postData.content = postbbCodePreProcessor(data.postData.content);
     winston.verbose('processing bbcode on post');
   
 		new BBCodeParser(data.postData.content, bbCodesTable, 'apply', function(result) {
-			data.postData.content = textUnfucker(bbCodeParserSingle(result));
+			data.postData.content = bbCodePostProcessor(textUnfucker(result));
 			callback(null, data);
 		}).parse();
   }
@@ -641,15 +662,11 @@
 			return callback(null, data);
 		}
     
-		data.userData.signature = data.userData.signature
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/\n/g, "<br>")
-			.replace(/&#x2F;/g, "/");
+		data.userData.signature = sigbbCodePreProcessor(data.userData.signature);
 		winston.verbose('processing bbcode on sig');
   
 		new BBCodeParser(data.userData.signature, bbCodesTable, 'apply', function(result) {
-			data.userData.signature = bbCodeParserSingle(result);
+			data.userData.signature = bbCodePostProcessor(result);
 			callback(null, data);
 		}).parse();
   }
@@ -662,7 +679,7 @@
     data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
   
 		new BBCodeParser(data, bbCodesTable, 'apply', function(result) {
-			data = bbCodeParserSingle(result);
+			data = bbCodePostProcessor(result);
 			callback(null, data);
 		}).parse();
   }
