@@ -2,7 +2,6 @@
 	"use strict";
 
 	const async = require('async'),
-    sanitizer = require('sanitize-html'),
 
     chipData = require('./data/chip.json'),
     virusData = require('./data/virus.json'),
@@ -505,6 +504,7 @@
 
   const singleCodesTable = {
     "hr": () => '<hr>',
+    "br": () => '<br>',
     "chip": (match, ...args) => chipTagReplace(match, args[0], args[1]),
   }
 
@@ -609,22 +609,6 @@
       .replace(//g, "—");
   }
 
-  /* function sanitizeHtml(content) {
-    sanitizer(content, {
-      allowedTags: sanitizer.defaults.allowedTags.concat([
-        'span', 'font', 'img', 's',
-      ]),
-      allowedAttributes: {
-        a: [ 'href', 'name', 'target' ],
-        img: [ 'src' ],
-        font: [ 'color' ],
-        div: [ 'class' ],
-        p: [ 'style' ],
-        span: [ 'style', 'class', 'name' ],
-      }
-    })
-  } */
-
 	function checkCompatibility(callback) {
 		async.parallel({
 			active: async.apply(plugins.getActive),
@@ -638,11 +622,32 @@
 				}).length === 0
 			})
 		});
-	};
+  };
+  
+  function customFilter (object) {
+    if (object.hasOwnProperty('descriptionParsed')) {
+      object.descriptionParsed = sigbbCodePreProcessor(object.descriptionParsed);
+    
+      new BBCodeParser(object.descriptionParsed, bbCodesTable, 'apply', function(result) {
+        object.descriptionParsed = bbCodePostProcessor(result);
+      }).parse();
+    }
+  
+    Object.values(object).forEach(val => {
+      if (typeof val === 'object') {
+        customFilter(val);
+      };
+    });
+  }
 
 	/* ============================================ */
 	/* ============================================ */
 	/* ============================================ */
+  
+  module.exports.processCategory = function(data, callback) {
+    customFilter(data.templateData.categories);
+    callback(null, data);
+  }
   
   module.exports.processPost = function(data, callback) {
 		if (!data || !data.postData || !data.postData.content) {

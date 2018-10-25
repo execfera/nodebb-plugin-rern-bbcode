@@ -16,6 +16,7 @@
   "templates": "./public/templates",
   "hooks": [
     { "hook": "static:app.load", "method": "load" },
+    { "hook": "filter:category.get", "method": "processCategory", "priority": 5 },
     { "hook": "filter:parse.post", "method": "processPost", "priority": 5 },
     { "hook": "filter:parse.signature", "method": "processSig", "priority": 5 },
     { "hook": "filter:parse.aboutme", "method": "processRaw" },
