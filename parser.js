@@ -645,7 +645,9 @@
 	/* ============================================ */
   
   module.exports.processCategory = function(data, callback) {
-    customFilter(data.templateData.categories);
+    if (data && data.templateData && data.templateData.categories) {
+      customFilter(data.templateData.categories);
+    }
     callback(null, data);
   }
   
