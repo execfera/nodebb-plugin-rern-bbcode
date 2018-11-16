@@ -74,4 +74,5 @@ $(document).ready(function () {
 
   $(window).on('action:topic.loaded', bbCodeFunction);
   $(window).on('action:posts.loaded', bbCodeFunction);
+  $(window).on('action:posts.edited', bbCodeFunction);
 })
