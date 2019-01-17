@@ -79,4 +79,5 @@ $(document).ready(function () {
       bbCodeFunction();
     }
   });
+  $(window).on('action:posts.edited', bbCodeFunction);
 })
