@@ -74,4 +74,9 @@ $(document).ready(function () {
 
   $(window).on('action:topic.loaded', bbCodeFunction);
   $(window).on('action:posts.loaded', bbCodeFunction);
+  $(window).on('action:ajaxify.end', (_, data) => {
+    if (data.tpl_url && data.tpl_url === 'account/profile') {
+      bbCodeFunction();
+    }
+  });
 })
